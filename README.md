@@ -29,3 +29,5 @@ sort.init()
 * **menus**: *String*, Classname of dropdown menus
 * **notify**: *Boolean*, Optional for appending "No results found" to Isotope instance when nothing is returned
 * **clearFiltersButton**: *String*, Classname for optional button to clear all current filters
+* **sort**: *Object*, Pass in sorting options for order, sortBy and sortAscending
+* **setHeightToWidth**: *Boolean*, If you need to run this function from the KBD Utility it is built in.

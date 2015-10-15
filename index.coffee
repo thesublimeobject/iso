@@ -8,33 +8,49 @@ _toArray = require 'lodash/lang/toArray'
 _debounce = require 'lodash/function/debounce'
 dropdown = require 'kbd-dropdown'
 kbd = require './kbd'
+imagesLoaded = require 'imagesloaded'
 
 class Iso
 
 	# Set all options
 	constructor: (options = {}) ->
-		@iso = options.iso ? null
+		@iso = null
+		@isoFilters = {}
 		@container = options.container ? null
 		@items = options.items ? null
 		@filters = if options.filterType is 'sidebarFilters' then document.querySelectorAll('.' + options.filters + ' input') else document.getElementsByClassName(options.filters)
 		@gutter = options.gutter ? 0
 		@lazy = options.lazy ? false
 		@filterType = options.filterType ? 'simple'
-		@isoFilters = {}
 		@sidebarButton = document.getElementsByClassName(options.sidebarTrigger)[0] ? document.getElementsByClassName('sidebar-button')[0]
 		@sidebar = document.getElementsByClassName(options.sidebar)[0] ? document.getElementsByClassName('iso__sidebar')[0]
 		@menus = document.getElementsByClassName(options.menus) ? document.getElementsByClassName('dropdown')
 		@notify = options.notify ? false
 		@clearFiltersButton = document.getElementsByClassName(options.clearFiltersButton)[0] ? null
+		@sort = options.sort ? null
+		@setHeightToWidth = options.setHeightToWidth ? false
 
 	# Initialize Isotope instance
 	isoInit: ->
-		@iso = new Isotope '#' + @container,
-			itemSelector: '.' + @items
-			masonry:
-				columnWidth: '.' + @items
-				gutter: @gutter
-		return
+		if @sort?
+			@iso = new Isotope '#' + @container,
+				itemSelector: '.' + @items
+				masonry:
+					columnWidth: '.' + @items
+					gutter: @gutter
+				getSortData:
+					order: @sort.order
+				sortBy: @sort.sortBy
+				sortAscending: @sort.sortAscending
+			return
+
+		else
+			@iso = new Isotope '#' + @container,
+				itemSelector: '.' + @items
+				masonry:
+					columnWidth: '.' + @items
+					gutter: @gutter
+			return
 
 	# Clears active filter on @filters
 	clearFilters: ->
@@ -251,6 +267,7 @@ class Iso
 
 	# Init
 	init: ->
+		_this = @
 
 		# Init Main
 		@isoInit()
@@ -267,18 +284,25 @@ class Iso
 			@dropdownInit()
 			@dropdownFilters()
 
-		# Re-layout
-		@iso.layout()
-
 		# Lazy
 		if @lazy is true
 			@lazyLoad()
-			@iso.arrange
-				filter: '*'
-			@iso.layout()
 
-		# Clear Filters BUtton
+		# Re-layout
+		isoLoad = imagesLoaded( '#' + @container )
+		isoLoad.on 'progress', ->
+			if _this.setHeightToWidth?
+				kbd.setHeightToWidth( document.getElementsByClassName(_this.items), true )
+
+			_this.iso.layout()
+
+		# Clear Filters Button
 		if @clearFiltersButton?
 			@clearFiltersTrigger()
+
+		# Resize, obvi
+		window.addEventListener 'resize', _debounce ->
+			kbd.setHeightToWidth( document.getElementsByClassName(_this.items), true )
+		, 150
 
 module.exports = Iso

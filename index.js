@@ -1,4 +1,4 @@
-var Iso, Isotope, _debounce, _includes, _toArray, dropdown, kbd;
+var Iso, Isotope, _debounce, _includes, _toArray, dropdown, imagesLoaded, kbd;
 
 Isotope = require('isotope-layout');
 
@@ -12,35 +12,54 @@ dropdown = require('kbd-dropdown');
 
 kbd = require('./kbd');
 
+imagesLoaded = require('imagesloaded');
+
 Iso = (function() {
   function Iso(options) {
-    var ref, ref1, ref10, ref2, ref3, ref4, ref5, ref6, ref7, ref8, ref9;
+    var ref, ref1, ref10, ref11, ref2, ref3, ref4, ref5, ref6, ref7, ref8, ref9;
     if (options == null) {
       options = {};
     }
-    this.iso = (ref = options.iso) != null ? ref : null;
-    this.container = (ref1 = options.container) != null ? ref1 : null;
-    this.items = (ref2 = options.items) != null ? ref2 : null;
-    this.filters = options.filterType === 'sidebarFilters' ? document.querySelectorAll('.' + options.filters + ' input') : document.getElementsByClassName(options.filters);
-    this.gutter = (ref3 = options.gutter) != null ? ref3 : 0;
-    this.lazy = (ref4 = options.lazy) != null ? ref4 : false;
-    this.filterType = (ref5 = options.filterType) != null ? ref5 : 'simple';
+    this.iso = null;
     this.isoFilters = {};
-    this.sidebarButton = (ref6 = document.getElementsByClassName(options.sidebarTrigger)[0]) != null ? ref6 : document.getElementsByClassName('sidebar-button')[0];
-    this.sidebar = (ref7 = document.getElementsByClassName(options.sidebar)[0]) != null ? ref7 : document.getElementsByClassName('iso__sidebar')[0];
-    this.menus = (ref8 = document.getElementsByClassName(options.menus)) != null ? ref8 : document.getElementsByClassName('dropdown');
-    this.notify = (ref9 = options.notify) != null ? ref9 : false;
-    this.clearFiltersButton = (ref10 = document.getElementsByClassName(options.clearFiltersButton)[0]) != null ? ref10 : null;
+    this.container = (ref = options.container) != null ? ref : null;
+    this.items = (ref1 = options.items) != null ? ref1 : null;
+    this.filters = options.filterType === 'sidebarFilters' ? document.querySelectorAll('.' + options.filters + ' input') : document.getElementsByClassName(options.filters);
+    this.gutter = (ref2 = options.gutter) != null ? ref2 : 0;
+    this.lazy = (ref3 = options.lazy) != null ? ref3 : false;
+    this.filterType = (ref4 = options.filterType) != null ? ref4 : 'simple';
+    this.sidebarButton = (ref5 = document.getElementsByClassName(options.sidebarTrigger)[0]) != null ? ref5 : document.getElementsByClassName('sidebar-button')[0];
+    this.sidebar = (ref6 = document.getElementsByClassName(options.sidebar)[0]) != null ? ref6 : document.getElementsByClassName('iso__sidebar')[0];
+    this.menus = (ref7 = document.getElementsByClassName(options.menus)) != null ? ref7 : document.getElementsByClassName('dropdown');
+    this.notify = (ref8 = options.notify) != null ? ref8 : false;
+    this.clearFiltersButton = (ref9 = document.getElementsByClassName(options.clearFiltersButton)[0]) != null ? ref9 : null;
+    this.sort = (ref10 = options.sort) != null ? ref10 : null;
+    this.setHeightToWidth = (ref11 = options.setHeightToWidth) != null ? ref11 : false;
   }
 
   Iso.prototype.isoInit = function() {
-    this.iso = new Isotope('#' + this.container, {
-      itemSelector: '.' + this.items,
-      masonry: {
-        columnWidth: '.' + this.items,
-        gutter: this.gutter
-      }
-    });
+    if (this.sort != null) {
+      this.iso = new Isotope('#' + this.container, {
+        itemSelector: '.' + this.items,
+        masonry: {
+          columnWidth: '.' + this.items,
+          gutter: this.gutter
+        },
+        getSortData: {
+          order: this.sort.order
+        },
+        sortBy: this.sort.sortBy,
+        sortAscending: this.sort.sortAscending
+      });
+    } else {
+      this.iso = new Isotope('#' + this.container, {
+        itemSelector: '.' + this.items,
+        masonry: {
+          columnWidth: '.' + this.items,
+          gutter: this.gutter
+        }
+      });
+    }
   };
 
   Iso.prototype.clearFilters = function() {
@@ -261,6 +280,8 @@ Iso = (function() {
   };
 
   Iso.prototype.init = function() {
+    var _this, isoLoad;
+    _this = this;
     this.isoInit();
     if (this.filterType === 'simple') {
       this.simpleFilters();
@@ -273,17 +294,22 @@ Iso = (function() {
       this.dropdownInit();
       this.dropdownFilters();
     }
-    this.iso.layout();
     if (this.lazy === true) {
       this.lazyLoad();
-      this.iso.arrange({
-        filter: '*'
-      });
-      this.iso.layout();
     }
+    isoLoad = imagesLoaded('#' + this.container);
+    isoLoad.on('progress', function() {
+      if (_this.setHeightToWidth != null) {
+        kbd.setHeightToWidth(document.getElementsByClassName(_this.items), true);
+      }
+      return _this.iso.layout();
+    });
     if (this.clearFiltersButton != null) {
-      return this.clearFiltersTrigger();
+      this.clearFiltersTrigger();
     }
+    return window.addEventListener('resize', _debounce(function() {
+      return kbd.setHeightToWidth(document.getElementsByClassName(_this.items), true);
+    }, 150));
   };
 
   return Iso;
